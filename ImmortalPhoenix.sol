@@ -559,6 +559,8 @@ contract ImmortalPhoenix is ERC721EnumerableCheap, Ownable {
      */
     function withdraw() external onlyOwner {
 
+        address thisAddress = address(this);
+
         require(thisAddress.balance > 0, "there is no balance in the address");
         require(payments.length > 0, "havent set the payments");
 
@@ -594,9 +596,9 @@ contract ImmortalPhoenix is ERC721EnumerableCheap, Ownable {
 
         }
 
-        if(address(this).balance > 0) {
+        if(thisAddress.balance > 0) {
 
-            payable(owner()).transfer(address(this).balance);
+            payable(owner()).transfer(thisAddress.balance);
         }
         
     }
