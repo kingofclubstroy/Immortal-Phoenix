@@ -47,7 +47,7 @@ contract IMetadataHandler {
 
     function tokenURI(Phoenix memory _phoenix, MetadataStruct memory _metadataStruct) external view returns(string memory)  {}
     function getSpecialToken(uint _collectionId, uint _tokenId) external view returns(uint) {}
-    function resurrect(uint _collectionId, uint128 _hash, uint _tokenId) external {}
+    function resurrect(uint _collectionId, uint _tokenId) external {}
 }
 
 /**
@@ -141,7 +141,7 @@ contract ImmortalPhoenix is ERC721EnumerableCheap, Ownable {
     function generateTraits(
         uint _tokenId,
         address _address
-    ) public view returns (uint128) {
+    ) internal view returns (uint128) {
 
         //TODO: turn back to internal
 
@@ -399,11 +399,9 @@ contract ImmortalPhoenix is ERC721EnumerableCheap, Ownable {
 
             tokenIdToPhoenix[prevRes.tokenId] = phoenix;
 
-            metadataHandler.resurrect(0, newHash, prevRes.tokenId);
-
-
-
         }
+
+        metadataHandler.resurrect(0, _tokenId);
 
         previousResurrection = ResurrectionInfo(_tokenId, hash);
 
@@ -682,14 +680,14 @@ contract ImmortalPhoenix is ERC721EnumerableCheap, Ownable {
     */
     function transferFrom(address from, address to, uint256 tokenId) public override {
 
-        ERC721Cheap.transferFrom(from, to, tokenId);
-
         blazeToken.updateTransfer(from, to);
 
         uint level = uint(tokenIdToPhoenix[tokenId].level);
 
         addressToLevels[from] -= level;
         addressToLevels[to] += level;
+
+        ERC721Cheap.transferFrom(from, to, tokenId);
 
     }
 
@@ -698,7 +696,6 @@ contract ImmortalPhoenix is ERC721EnumerableCheap, Ownable {
     */
     function safeTransferFrom(address from, address to, uint256 tokenId, bytes memory _data) public override {
 
-        ERC721Cheap.safeTransferFrom(from, to, tokenId, _data);
 
         blazeToken.updateTransfer(from, to);
 
@@ -706,6 +703,8 @@ contract ImmortalPhoenix is ERC721EnumerableCheap, Ownable {
 
         addressToLevels[from] -= level;
         addressToLevels[to] += level;
+
+        ERC721Cheap.safeTransferFrom(from, to, tokenId, _data);
 
     }
 
