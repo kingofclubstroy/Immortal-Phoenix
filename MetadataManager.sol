@@ -42,10 +42,8 @@ contract MetadataManager is Ownable {
 
     mapping(uint => mapping (uint => uint)) mythicTokens;
 
-    //TODO: This sets the rarity, need to
     mapping(uint => mapping(uint => uint16[])) PropertyRarityRanges;
 
-    //TODO: This sets the rarity, need to
     mapping(uint => mapping(uint => TraitRarity[])) PropertyRarities;
 
     mapping(uint => bool) collectionRevealed;
@@ -64,12 +62,8 @@ contract MetadataManager is Ownable {
 
     verifiableRandomNumberContract randomNumberContract;
 
-
-
     string public constant header = '<svg id="phoenix" width="100%" height="100%" version="1.1" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">';
     string public constant footer = '<style>#phoenix{image-rendering: pixelated;}</style></svg>';
-
-    event MythicCreated(uint id);
 
     /**
 
@@ -280,7 +274,6 @@ contract MetadataManager is Ownable {
 
     
     function getTraitsFromHash(uint128 _hash, uint _collectionId, uint _numTraits) public view returns(uint[] memory) {
-
 
         uint[] memory traits = new uint[](_numTraits);
         uint16 randomInput;
@@ -497,9 +490,11 @@ contract MetadataManager is Ownable {
 
     }
 
-    function rewardMythics(uint _collectionId, uint _numMythics) external onlyOwner {
+    function rewardMythics(uint _collectionId, uint _numMythics) external {
 
         require(address(randomNumberContract) != address(0), "random number contract not set");
+
+        require(acceptedAddresses[msg.sender] == true, "Address cannot call this function");
 
         uint lastMythic = mythicsAdded[_collectionId];
 
