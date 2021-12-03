@@ -538,6 +538,11 @@ contract MetadataManager is Ownable {
 
         }
 
+        uint[] memory clearedPool;
+
+        //Clear the mythic reward pool
+        mythicRewardPool[_collectionId] = clearedPool;
+
 
     }
 
