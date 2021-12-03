@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.7;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./MetadataStruct.sol";
@@ -10,6 +10,10 @@ contract metadataAddonContract {
 
     function getMetadata(uint _collectionId, uint _tokenId) external view returns (string memory) {}
 
+}
+
+contract verifiableRandomNumberContract {
+    function getRandomNumber() external returns(uint) {}
 }
 
 contract MetadataManager is Ownable {
@@ -55,6 +59,12 @@ contract MetadataManager is Ownable {
     address[] addonAddresses;
 
     mapping(address => bool) acceptedAddresses;
+
+    mapping(uint => uint[]) mythicRewardPool;
+
+    verifiableRandomNumberContract randomNumberContract;
+
+
 
     string public constant header = '<svg id="phoenix" width="100%" height="100%" version="1.1" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">';
     string public constant footer = '<style>#phoenix{image-rendering: pixelated;}</style></svg>';
@@ -460,6 +470,12 @@ contract MetadataManager is Ownable {
 
     }
 
+    function setRandomNumberContract(address _addr) external onlyOwner {
+
+        randomNumberContract = verifiableRandomNumberContract(_addr);
+
+    }
+
     function addMythicToPool(MythicInfo calldata _mythicInfo, uint _collectionId) external onlyOwner {
 
         uint total =  totalMythics[_collectionId];
@@ -471,26 +487,57 @@ contract MetadataManager is Ownable {
     }
 
     
-    function resurrect(uint _collectionId, uint128 _hash, uint _tokenId) external {
+    function resurrect(uint _collectionId, uint _tokenId) external {
 
         require(acceptedAddresses[msg.sender] == true, "Address cannot call this function");
+
+        require(mythicTokens[_collectionId][_tokenId] == 0, "Mythic tokens refuse to be resurected");
+
+        mythicRewardPool[_collectionId].push(_tokenId);
+
+    }
+
+    function rewardMythics(uint _collectionId, uint _numMythics) external onlyOwner {
+
+        require(address(randomNumberContract) != address(0), "random number contract not set");
 
         uint lastMythic = mythicsAdded[_collectionId];
 
         uint numInPool = totalMythics[_collectionId] - lastMythic;
 
-        if(numInPool > 0) {
+        require(numInPool <= _numMythics, "Trying to give away more mythics than exist");
 
-            if(_hash % 10000 <= (numInPool * 50)) {
+        uint[] memory rewardPool = mythicRewardPool[_collectionId];
 
-                mythicTokens[_collectionId][_tokenId] = lastMythic;
+        uint verifiablyRandomNumber = randomNumberContract.getRandomNumber();
+
+        uint tempLength = rewardPool.length;
+
+        require(tempLength >= _numMythics, "More mythics to add than there are tokens in pool to give");
+
+        uint totalMythicsGiven = 0;
+
+        while(totalMythicsGiven < _numMythics) {
+
+            require(tempLength > 0, "Length of reward pool is zero");
+
+            uint randindex = (verifiablyRandomNumber / ((totalMythicsGiven + 1) * 5000)) % tempLength;
+
+            if(mythicTokens[_collectionId][rewardPool[randindex]] == 0) {
+                //this token is not already a 1/1, so is chosen to be
+                mythicTokens[_collectionId][rewardPool[randindex]] = lastMythic;
                 mythicsAdded[_collectionId] += 1;
 
-                emit MythicCreated(_tokenId);
-
+                lastMythic += 1;
+                totalMythicsGiven += 1;
             }
 
+            rewardPool[randindex] = rewardPool[tempLength - 1];
+
+            tempLength -= 1;
+
         }
+
 
     }
 
