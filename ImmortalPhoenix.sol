@@ -46,8 +46,12 @@ contract IBlazeToken {
 contract IMetadataHandler {
 
     function tokenURI(Phoenix memory _phoenix, MetadataStruct memory _metadataStruct) external view returns(string memory)  {}
+
     function getSpecialToken(uint _collectionId, uint _tokenId) external view returns(uint) {}
+
     function resurrect(uint _collectionId, uint _tokenId) external {}
+
+    function rewardMythics(uint _collectionId, uint _numMythics) external {}
 }
 
 /**
@@ -639,15 +643,27 @@ contract ImmortalPhoenix is ERC721EnumerableCheap, Ownable {
     function revertName(uint _tokenId) external onlyOwner {
 
         tokenIdToPhoenix[_tokenId].name = ""; 
-
-
+        
     }
 
     /**
     * @dev Toggle the ability to resurect phoenix tokens and reroll traits
     */
-    function toggleResurrection() external onlyOwner {
+    function toggleResurrection() public onlyOwner {
         allowResurrection = !allowResurrection;
+    }
+
+    /**
+    * @dev Give out mythics to phoenixs that have resurrected recently
+    * @param _numMythics is the number of mythics that will be given out
+    */
+    function rewardMythics(uint _numMythics) external onlyOwner {
+
+        require(allowResurrection == false, "Need to have resurrection paused mythics are rewarded");
+        metadataHandler.rewardMythics(0, _numMythics);
+
+        toggleResurrection();
+
     }
 
     /**
